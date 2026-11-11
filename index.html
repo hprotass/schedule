@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Расписание">
+<meta name="theme-color" content="#0A0A0C">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon.png">
+<title>Расписание</title>
+<style>
+  :root {
+    --bg-0: #08080A;
+    --bg-1: #0E0E12;
+    --bg-2: #14141A;
+    --glass: rgba(28, 28, 34, 0.55);
+    --glass-strong: rgba(36, 36, 44, 0.7);
+    --stroke: rgba(255, 255, 255, 0.08);
+    --stroke-strong: rgba(255, 255, 255, 0.14);
+    --accent: #5BC8FF;
+    --accent-2: #FFB86B;
+    --accent-glow: rgba(91, 200, 255, 0.35);
+    --text: #F5F5F7;
+    --text-2: #9A9AA2;
+    --text-3: #5E5E66;
+    --radius-lg: 22px;
+    --radius-md: 16px;
+    --radius-sm: 12px;
+  }
+
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+  html, body {
+    margin: 0; padding: 0;
+    min-height: 100%;
+    background:
+      radial-gradient(1200px 700px at 50% -10%, #1A1A22 0%, transparent 60%),
+      radial-gradient(800px 500px at 100% 100%, #12121A 0%, transparent 55%),
+      linear-gradient(180deg, var(--bg-1) 0%, var(--bg-0) 100%);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Segoe UI", Roboto, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+    overflow-x: hidden;
+  }
+
+  body::before {
+    content: "";
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    height: env(safe-area-inset-top);
+    background: var(--bg-0);
+    z-index: 100;
+  }
+
+  body::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    background:
+      radial-gradient(600px 300px at 20% 10%, rgba(91,200,255,0.08), transparent 60%),
+      radial-gradient(500px 300px at 90% 40%, rgba(255,184,107,0.06), transparent 60%);
+    z-index: 0;
+  }
+
+  .wrap {
+    position: relative;
+    z-index: 1;
+    max-width: 520px;
+    margin: 0 auto;
+    padding: 20px 16px 48px;
+  }
+
+  .clock {
+    font-size: 52px;
+    font-weight: 700;
+    text-align: center;
+    letter-spacing: -0.5px;
+    font-variant-numeric: tabular-nums;
+    background: linear-gradient(180deg, #FFFFFF 0%, #B8B8C0 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    text-shadow: 0 0 40px rgba(91,200,255,0.15);
+    margin-top: 4px;
+  }
+
+  .date {
+    text-align: center;
+    color: var(--text-2);
+    font-size: 13px;
+    letter-spacing: 0.5px;
+    margin-top: 2px;
+    margin-bottom: 22px;
+    text-transform: capitalize;
+  }
+
+  .glass {
+    position: relative;
+    background: var(--glass);
+    backdrop-filter: blur(24px) saturate(180%);
+    -webkit-backdrop-filter: blur(24px) saturate(180%);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--stroke);
+    box-shadow:
+      0 10px 30px rgba(0,0,0,0.45),
+      inset 0 1px 0 rgba(255,255,255,0.06);
+    overflow: hidden;
+  }
+
+  .glass::before {
+    content: "";
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.18), transparent);
+    pointer-events: none;
+  }
+
+  .card {
+    padding: 18px 18px 16px;
+    margin-bottom: 14px;
+  }
+
+  .label {
+    font-size: 11px;
+    color: var(--text-3);
+    letter-spacing: 2.5px;
+    font-weight: 600;
+    margin-bottom: 8px;
+  }
+
+  .title {
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: -0.3px;
+    color: var(--accent);
+    margin-bottom: 4px;
+    text-shadow: 0 0 24px var(--accent-glow);
+  }
+
+  .title.next { color: var(--accent-2); text-shadow: 0 0 24px rgba(255,184,107,0.3); font-size: 20px; }
+
+  .range { font-size: 13px; color: var(--text-2); margin-bottom: 10px; font-variant-numeric: tabular-nums; }
+
+  .remaining {
+    font-size: 17px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.2px;
+    color: var(--text);
+  }
+
+  .toggle-btn {
+    width: 100%;
+    background: var(--glass);
+    backdrop-filter: blur(24px) saturate(180%);
+    -webkit-backdrop-filter: blur(24px) saturate(180%);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--stroke);
+    color: var(--text);
+    padding: 14px 18px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 2px;
+    color: var(--text-2);
+    margin: 22px 0 10px;
+    cursor: pointer;
+    box-shadow:
+      0 6px 20px rgba(0,0,0,0.35),
+      inset 0 1px 0 rgba(255,255,255,0.05);
+    transition: border-color 0.3s ease, transform 0.15s ease;
+  }
+
+  .toggle-btn:active { transform: scale(0.985); }
+
+  .chevron {
+    width: 18px; height: 18px;
+    transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    color: var(--text-2);
+  }
+
+  .chevron.open { transform: rotate(180deg); }
+
+  .schedule-wrap {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.55s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.4s ease;
+    opacity: 0;
+  }
+
+  .schedule-wrap.open {
+    opacity: 1;
+  }
+
+  .row {
+    background: var(--glass);
+    backdrop-filter: blur(18px) saturate(160%);
+    -webkit-backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid var(--stroke);
+    border-radius: var(--radius-sm);
+    padding: 12px 16px;
+    margin-bottom: 7px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 15px;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
+    transition: border-color 0.3s ease, background 0.3s ease;
+  }
+
+  .row .name { color: var(--text); letter-spacing: -0.1px; line-height: 1.3; }
+  .row .time { color: var(--text-2); font-variant-numeric: tabular-nums; font-size: 13px; letter-spacing: 0.3px; white-space: nowrap; margin-left: 12px; }
+
+  .row.active {
+    border-color: rgba(91,200,255,0.45);
+    background: rgba(91,200,255,0.08);
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,0.06),
+      0 0 24px rgba(91,200,255,0.15);
+  }
+
+  .row.active .name { color: var(--accent); font-weight: 600; }
+  .row.active .time { color: rgba(91,200,255,0.8); }
+
+  .schedule-inner { padding-bottom: 6px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="clock" id="clock">--:--:--</div>
+  <div class="date" id="date"></div>
+
+  <div class="glass card">
+    <div class="label">СЕЙЧАС</div>
+    <div class="title" id="curTitle">—</div>
+    <div class="range" id="curRange"></div>
+    <div class="remaining" id="curRemaining"></div>
+  </div>
+
+  <div class="glass card">
+    <div class="label">ДАЛЕЕ</div>
+    <div class="title next" id="nextTitle">—</div>
+    <div class="range" id="nextRange"></div>
+    <div class="remaining" id="nextRemaining"></div>
+  </div>
+
+  <button class="toggle-btn" id="toggleBtn" aria-expanded="false">
+    <span>РАСПИСАНИЕ ДНЯ</span>
+    <svg class="chevron" id="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="6 9 12 15 18 9"></polyline>
+    </svg>
+  </button>
+
+  <div class="schedule-wrap" id="scheduleWrap">
+    <div class="schedule-inner" id="scheduleList"></div>
+  </div>
+
+</div>
+
+<script>
+const MAX_PAIRS = 6;
+const DAY_START = 9 * 60;
+
+// Базовое расписание (Пн-Пт)
+function buildWeekdaySchedule() {
+  const slots = [];
+  let t = DAY_START;
+  for (let pair = 1; pair <= MAX_PAIRS; pair++) {
+    slots.push({ kind: 'pair1', pair, start: t, end: t + 45 });
+    t += 45;
+
+    const small = pair <= 3 ? 10 : 5;
+    slots.push({ kind: 'small', pair, start: t, end: t + small });
+    t += small;
+
+    slots.push({ kind: 'pair2', pair, start: t, end: t + 45 });
+    t += 45;
+
+    if (pair < MAX_PAIRS) {
+      const big = pair < 3 ? 30 : 20;
+      slots.push({ kind: 'big', pair, start: t, end: t + big });
+      t += big;
+    }
+  }
+  return slots;
+}
+
+// Расписание на субботу
+function buildSaturdaySchedule() {
+  return [
+    { name: '1 занятие', start: 10*60 + 45, end: 11*60 + 30, isBreak: false },
+    { name: 'перемена 5 мин.', start: 11*60 + 30, end: 11*60 + 35, isBreak: true },
+    { name: '2 занятие', start: 11*60 + 35, end: 12*60 + 20, isBreak: false },
+    { name: 'перемена 20 мин.', start: 12*60 + 20, end: 12*60 + 40, isBreak: true },
+    { name: '3 занятие', start: 12*60 + 40, end: 13*60 + 25, isBreak: false },
+    { name: 'перемена 5 мин.', start: 13*60 + 25, end: 13*60 + 30, isBreak: true },
+    { name: '4 занятие', start: 13*60 + 30, end: 14*60 + 15, isBreak: false },
+    { name: 'перемена 10 мин.', start: 14*60 + 15, end: 14*60 + 25, isBreak: true },
+    { name: '5 занятие', start: 14*60 + 25, end: 15*60 + 10, isBreak: false },
+    { name: 'перемена 5 мин.', start: 15*60 + 10, end: 15*60 + 15, isBreak: true },
+    { name: '6 занятие', start: 15*60 + 15, end: 16*60 + 00, isBreak: false }
+  ];
+}
+
+const WEEKDAY_SLOTS = buildWeekdaySchedule();
+const SATURDAY_SLOTS = buildSaturdaySchedule();
+
+function getTodaySlots() {
+  const day = new Date().getDay();
+  if (day === 0) return null; // Воскресенье — пар нет
+  if (day === 6) return SATURDAY_SLOTS;
+  return WEEKDAY_SLOTS;
+}
+
+function slotTitle(s) {
+  if (s.name) return s.name;
+  switch (s.kind) {
+    case 'pair1': return `Пара ${s.pair} (1 часть)`;
+    case 'pair2': return `Пара ${s.pair} (2 часть)`;
+    case 'small': return 'Маленькая перемена';
+    case 'big':   return 'Большая перемена';
+  }
+}
+
+function fmtTime(min) {
+  const h = Math.floor(min / 60).toString().padStart(2, '0');
+  const m = (min % 60).toString().padStart(2, '0');
+  return `${h}:${m}`;
+}
+
+function fmtRemaining(totalSec) {
+  if (totalSec < 0) totalSec = 0;
+  const h = Math.floor(totalSec / 3600);
+  const m = Math.floor((totalSec % 3600) / 60);
+  const s = totalSec % 60;
+  if (h > 0) return `${h} ч ${String(m).padStart(2,'0')} мин ${String(s).padStart(2,'0')} с`;
+  return `${String(m).padStart(2,'0')} мин ${String(s).padStart(2,'0')} с`;
+}
+
+function getState(slots) {
+  if (!slots) return { current: null, next: null, remainingSec: null };
+
+  const now = new Date();
+  const nowMin = now.getHours() * 60 + now.getMinutes() + now.getSeconds() / 60;
+  const nowSec = now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds();
+
+  if (nowMin < slots[0].start) {
+    const first = slots[0];
+    return {
+      current: null,
+      next: first,
+      remainingSec: Math.floor(first.start * 60 - nowSec)
+    };
+  }
+
+  for (let i = 0; i < slots.length; i++) {
+    const s = slots[i];
+    if (nowMin >= s.start && nowMin < s.end) {
+      const next = slots.slice(i + 1).find(x => x.start >= s.end) || null;
+      return {
+        current: s,
+        next,
+        remainingSec: Math.floor(s.end * 60 - nowSec)
+      };
+    }
+  }
+
+  return { current: null, next: null, remainingSec: null };
+}
+
+const el = id => document.getElementById(id);
+
+function renderScheduleList(slots) {
+  const list = el('scheduleList');
+  if (!slots) {
+    list.innerHTML = '<div class="row" style="justify-content:center; color: var(--text-2); padding: 20px;">Сегодня выходной</div>';
+    return;
+  }
+  list.innerHTML = slots.map((s, i) =>
+    `<div class="row" data-idx="${i}">
+       <span class="name">${slotTitle(s)}</span>
+       <span class="time">${fmtTime(s.start)}–${fmtTime(s.end)}</span>
+     </div>`
+  ).join('');
+}
+
+function highlightActive(slots, current) {
+  document.querySelectorAll('.row').forEach(r => r.classList.remove('active'));
+  if (!current || !slots) return;
+  const idx = slots.indexOf(current);
+  const row = document.querySelector(`.row[data-idx="${idx}"]`);
+  if (row) row.classList.add('active');
+}
+
+function update() {
+  const now = new Date();
+  const slots = getTodaySlots();
+
+  el('clock').textContent = now.toLocaleTimeString('ru-RU', { hour12: false });
+  el('date').textContent = now.toLocaleDateString('ru-RU', {
+    weekday: 'long', day: 'numeric', month: 'long'
+  });
+
+  if (!slots) {
+    el('curTitle').textContent = 'Выходной';
+    el('curRange').textContent = '';
+    el('curRemaining').textContent = 'Сегодня пар нет';
+
+    el('nextTitle').textContent = '—';
+    el('nextRange').textContent = '';
+    el('nextRemaining').textContent = '';
+
+    highlightActive(null, null);
+    return;
+  }
+
+  const { current, next, remainingSec } = getState(slots);
+
+  if (current) {
+    el('curTitle').textContent = slotTitle(current);
+    el('curRange').textContent = `${fmtTime(current.start)} – ${fmtTime(current.end)}`;
+    el('curRemaining').textContent = `До конца: ${fmtRemaining(remainingSec)}`;
+  } else {
+    el('curTitle').textContent = 'Занятия не идут';
+    el('curRange').textContent = '';
+    el('curRemaining').textContent = remainingSec !== null
+      ? `До начала: ${fmtRemaining(remainingSec)}`
+      : 'На сегодня всё';
+  }
+
+  if (next) {
+    el('nextTitle').textContent = slotTitle(next);
+    el('nextRange').textContent = `${fmtTime(next.start)} – ${fmtTime(next.end)}`;
+    const startsIn = Math.floor(next.start * 60 - (now.getHours()*3600 + now.getMinutes()*60 + now.getSeconds()));
+    el('nextRemaining').textContent = startsIn > 0
+      ? `Начнётся через: ${fmtRemaining(startsIn)}`
+      : '';
+  } else {
+    el('nextTitle').textContent = '—';
+    el('nextRange').textContent = '';
+    el('nextRemaining').textContent = '';
+  }
+
+  highlightActive(slots, current);
+}
+
+const toggleBtn = el('toggleBtn');
+const chevron = el('chevron');
+const scheduleWrap = el('scheduleWrap');
+
+function setOpen(open) {
+  toggleBtn.setAttribute('aria-expanded', String(open));
+  chevron.classList.toggle('open', open);
+  scheduleWrap.classList.toggle('open', open);
+  if (open) {
+    scheduleWrap.style.maxHeight = scheduleWrap.scrollHeight + 'px';
+  } else {
+    scheduleWrap.style.maxHeight = scheduleWrap.scrollHeight + 'px';
+    requestAnimationFrame(() => {
+      scheduleWrap.style.maxHeight = '0px';
+    });
+  }
+}
+
+toggleBtn.addEventListener('click', () => {
+  const isOpen = scheduleWrap.classList.contains('open');
+  setOpen(!isOpen);
+});
+
+window.addEventListener('resize', () => {
+  if (scheduleWrap.classList.contains('open')) {
+    scheduleWrap.style.maxHeight = 'none';
+    const h = scheduleWrap.scrollHeight;
+    scheduleWrap.style.maxHeight = h + 'px';
+  }
+});
+
+const initialSlots = getTodaySlots();
+renderScheduleList(initialSlots);
+scheduleWrap.style.maxHeight = '0px';
+update();
+setInterval(update, 1000);
+</script>
+</body>
+</html>

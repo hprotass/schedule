@@ -1,0 +1,12 @@
+{
+  "name": "Расписание пар",
+  "short_name": "Расписание",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#08080A",
+  "theme_color": "#08080A",
+  "orientation": "portrait",
+  "icons": [
+    { "src": "icon.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}
